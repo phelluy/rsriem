@@ -1,7 +1,7 @@
 /// Physical parameters for the two-fluid isothermal Euler equations.
 pub struct EulerIsothermal {
-    c: f64,    // speed of sound
-    p0: f64,   // reference pressure
+    c: f64,   // speed of sound
+    p0: f64,  // reference pressure
     rz1: f64, // reference density for fluid 1
     rz2: f64, // reference density for fluid 2
 }
@@ -17,16 +17,16 @@ pub fn prim2bal_isot(y: [f64; 4], prm: &EulerIsothermal) -> [f64; 4] {
     let u = y[1];
     let v = y[2];
     let phi = y[3];
-    let r = (p-prm.p0)/prm.c/prm.c+phi*prm.rz1+(1.-phi)*prm.rz2;
+    let r = (p - prm.p0) / prm.c / prm.c + phi * prm.rz1 + (1. - phi) * prm.rz2;
     [r, r * u, r * v, r * phi]
 }
 
 pub fn bal2prim_isot(w: [f64; 4], prm: &EulerIsothermal) -> [f64; 4] {
     let r = w[0];
-    let u = w[1]/r;
-    let v = w[2]/r;
-    let phi = w[3]/r;
-    let p = prm.p0 + (r-phi*prm.rz1-(1.-phi)*prm.rz2)*prm.c*prm.c;
+    let u = w[1] / r;
+    let v = w[2] / r;
+    let phi = w[3] / r;
+    let p = prm.p0 + (r - phi * prm.rz1 - (1. - phi) * prm.rz2) * prm.c * prm.c;
     [p, u, v, phi]
 }
 
@@ -93,7 +93,7 @@ fn f_isot(
         * z_isot(
             (p - prm.p0) * pow(prm.c, -0.2e1) + rphi(phir, prm),
             (pr - prm.p0) * pow(prm.c, -0.2e1) + rphi(phir, prm),
-            prm
+            prm,
         )
         - ul
         - (pl - p)
@@ -101,7 +101,7 @@ fn f_isot(
             * z_isot(
                 (p - prm.p0) * pow(prm.c, -0.2e1) + rphi(phil, prm),
                 (pl - prm.p0) * pow(prm.c, -0.2e1) + rphi(phil, prm),
-                prm
+                prm,
             )
 }
 
@@ -123,27 +123,27 @@ fn df_isot(
         * z_isot(
             (p - prm.p0) * pow(cson, -0.2e1) + rphi(phir, prm),
             (pr - prm.p0) * pow(cson, -0.2e1) + rphi(phir, prm),
-            prm
+            prm,
         )
         - (pr - p)
             * pow(cson, -0.4e1)
             * dz_isot(
                 (p - prm.p0) * pow(cson, -0.2e1) + rphi(phir, prm),
                 (pr - prm.p0) * pow(cson, -0.2e1) + rphi(phir, prm),
-                prm
+                prm,
             )
         + pow(cson, -0.2e1)
             * z_isot(
                 (p - prm.p0) * pow(cson, -0.2e1) + rphi(phil, prm),
                 (pl - prm.p0) * pow(cson, -0.2e1) + rphi(phil, prm),
-                prm
+                prm,
             )
         - (pl - p)
             * pow(cson, -0.4e1)
             * dz_isot(
                 (p - prm.p0) * pow(cson, -0.2e1) + rphi(phil, prm),
                 (pl - prm.p0) * pow(cson, -0.2e1) + rphi(phil, prm),
-                prm
+                prm,
             )
 }
 
@@ -160,10 +160,9 @@ pub fn riemisot(wl: [f64; 4], wr: [f64; 4], xi: f64, prm: &EulerIsothermal) -> [
     // let phir = wr[3] / rr;
     // let pr = pres(rr, phir, prm);
     let yl = bal2prim_isot(wl, prm);
-    let [pl, ul, vl, phil]= yl; 
+    let [pl, ul, vl, phil] = yl;
     let yr = bal2prim_isot(wr, prm);
-    let [pr, ur, vr, phir]= yr;
-
+    let [pr, ur, vr, phir] = yr;
 
     // méthode de Newton
     let mut ps = pres(1e-5, phil, prm).max(pres(1e-5, phir, prm));
@@ -227,8 +226,107 @@ pub fn riemisot(wl: [f64; 4], wr: [f64; 4], xi: f64, prm: &EulerIsothermal) -> [
     prim2bal_isot([p, u, v, phi], prm)
 }
 
-#[cfg(test)]    
+/// Riemann solver functions for the two-fluid Euler equations.
+///
 
+fn phia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let mut t0;
+    t0 = ((pl - pa) * (ta - ha(pinfa, ga, ta, pa, pl))).sqrt();
+    // cas des chocs non entropiques (ne sert qu'au déboguage)
+    if pl <= pa {
+        t0 = -t0;
+    }
+    t0
+}
+
+fn dphia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let (t0, pi, pi0);
+    pi = pl + pinfa;
+    pi0 = pa + pinfa;
+    t0 = 0.5 * (2.0 * ta / ((ga - 1.0) * pi0 + (ga + 1.0) * pi)).sqrt()
+        - 0.5
+            * (((ga - 1.0) * pi0 + (ga + 1.0) * pi) / 2.0 / ta).sqrt()
+            * dha(pinfa, ga, ta, pa, pl);
+    t0
+}
+
+fn ha(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let (t, pi, pi0);
+    pi = pl + pinfa;
+    pi0 = pa + pinfa;
+    // cas du choc
+    if pl > pa {
+        t = ta * ((ga + 1.0) * pi0 + (ga - 1.0) * pi) / ((ga + 1.0) * pi + (ga - 1.0) * pi0);
+    }
+    // cas de la détente
+    else {
+        t = (pi0 / pi).powf(1.0 / ga) * ta;
+    }
+    t
+}
+
+pub fn dha(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let (t, pi, pi0);
+    pi = pl + pinfa;
+    pi0 = pa + pinfa;
+    // choc
+    if pl > pa {
+        t = -4.0 * ga * ta * pi0 / (pi * (ga + 1.0) + pi0 * (ga - 1.0)).powf(2.0);
+    }
+    // détente (ne sert qu'au déboguage)
+    else {
+        t = -ta * (pi0.powf(1.0 / ga)) / ga * (pi.powf(-(ga + 1.0) / ga));
+    }
+    t
+}
+
+fn psia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let (t1, c0);
+    c0 = ((ga * (pa + pinfa) * ta).sqrt());
+    t1 = 2.0 * c0 / (ga - 1.0) * ((pl + pinfa) / (pa + pinfa)).powf((ga - 1.0) / 2.0 / ga) - 1.0;
+    t1
+}
+
+fn dpsia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let (t0, c0);
+    c0 = ((ga * (pa + pinfa) * ta).sqrt());
+    t0 = c0 / ga
+        * (pa + pinfa).powf((1.0 - ga) / 2.0 / ga)
+        * (pl + pinfa).powf(-(ga + 1.0) / 2.0 / ga);
+    t0
+}
+
+
+fn pp(pinfa: f64, ga: f64, ta: f64, pa: f64, psi: f64) -> f64 {
+    let (mut t0, c, c0);
+    c0 = ((ga * (pa + pinfa) * ta).sqrt());
+    c = (ga - 1.0) / (ga + 1.0) * (psi + 2.0 / (ga - 1.0) * c0);
+    t0 = c * c / ga / ta / (pa + pinfa).powf(1.0 / ga);
+    t0 = t0.powf(ga / (ga - 1.0)) - pinfa;
+    t0
+}
+
+fn xhia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let t0;
+    if pl > pa {
+        t0 = phia(pinfa, ga, ta, pa, pl);
+    } else {
+        t0 = psia(pinfa, ga, ta, pa, pl);
+    }
+    t0
+}
+
+fn dxhia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
+    let t0;
+    if pl > pa {
+        t0 = dphia(pinfa, ga, ta, pa, pl);
+    } else {
+        t0 = dpsia(pinfa, ga, ta, pa, pl);
+    }
+    t0
+}
+
+#[cfg(test)]
 // test that bal2prim_isot and prim2bal_isot are consistent
 #[test]
 fn test_bal2prim_isot() {
@@ -244,7 +342,8 @@ fn test_bal2prim_isot() {
     for i in 0..4 {
         assert!((y[i] - y2[i]).abs() < 1e-12);
     }
-}   
+}
+
 
 #[test]
 fn test_prim2bal_isot() {
@@ -260,4 +359,4 @@ fn test_prim2bal_isot() {
     for i in 0..4 {
         assert!((w[i] - w2[i]).abs() < 1e-12);
     }
-}  
+}
