@@ -74,6 +74,7 @@ pub fn bal2prim_euler(w: [f64; 5], prm: &Euler) -> [f64; 5] {
 }
 
 /// Physical parameters for the shallow water equations.
+#[allow(dead_code)]
 struct ShallowWater {
     g: f64, // gravity
 }
@@ -110,6 +111,7 @@ fn pres(r: f64, phi: f64, prm: &EulerIsothermal) -> f64 {
     prm.p0 + (r - rphi(phi, prm)) * prm.c * prm.c
 }
 
+#[allow(clippy::too_many_arguments)]
 fn f_isot(
     pl: f64,
     ul: f64,
@@ -140,6 +142,8 @@ fn f_isot(
             )
 }
 
+// ignore clippy warning for this func: too many arguments
+#[allow(clippy::too_many_arguments)]
 fn df_isot(
     pl: f64,
     _ul: f64,
@@ -214,7 +218,7 @@ pub fn riemisot(wl: [f64; 4], wr: [f64; 4], xi: f64, prm: &EulerIsothermal) -> [
         dp = -f / df;
         ps += dp;
         iter += 1;
-        assert!(dp == dp);
+        //assert!(dp == dp);
         //println!("iter={} dp={} p={} f={} df={}", iter,dp, ps,f,df);
         if iter == iterbound {
             println!("Slow convergence dp={} p={}", dp, ps);
@@ -320,10 +324,10 @@ fn psia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
     c0 = (ga * (pa + pinfa) * ta).sqrt();
     t1 = 2.0 * c0 / (ga - 1.0) * (((pl + pinfa) / (pa + pinfa)).powf((ga - 1.0) / 2.0 / ga) - 1.0);
     // t1=  2*c0/(ga-1)*(pow((pl+pinfa)/(pa+pinfa),(ga-1.)/2/ga)-1.);
-    println!(
-        "c0={}, t1={} ga={}, ta={}, pa={}, pl={}",
-        c0, t1, ga, ta, pa, pl
-    );
+    // println!(
+    //     "c0={}, t1={} ga={}, ta={}, pa={}, pl={}",
+    //     c0, t1, ga, ta, pa, pl
+    // );
     t1
 }
 
@@ -348,25 +352,21 @@ fn pp(pinfa: f64, ga: f64, ta: f64, pa: f64, psi: f64) -> f64 {
 }
 
 fn xhia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
-    let t0;
     if pl > pa {
-        t0 = phia(pinfa, ga, ta, pa, pl);
-        println!("phia={}, ga={}, ta={}, pa={}, pl={}", t0, ga, ta, pa, pl);
+        phia(pinfa, ga, ta, pa, pl)
+        //println!("phia={}, ga={}, ta={}, pa={}, pl={}", t0, ga, ta, pa, pl);
     } else {
-        t0 = psia(pinfa, ga, ta, pa, pl);
-        println!("psia={}, ga={}, ta={}, pa={}, pl={}", t0, ga, ta, pa, pl);
+        psia(pinfa, ga, ta, pa, pl)
+        //println!("psia={}, ga={}, ta={}, pa={}, pl={}", t0, ga, ta, pa, pl);
     }
-    t0
 }
 
 fn dxhia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
-    let t0;
     if pl > pa {
-        t0 = dphia(pinfa, ga, ta, pa, pl);
+        dphia(pinfa, ga, ta, pa, pl)
     } else {
-        t0 = dpsia(pinfa, ga, ta, pa, pl);
+        dpsia(pinfa, ga, ta, pa, pl)
     }
-    t0
 }
 
 /// Riemann solver for the two-fluid Euler equations.
@@ -376,8 +376,8 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     let yr = bal2prim_euler(wr, prm);
     let [rr, ur, vr, pr, phir] = yr;
 
-    println!("yl = {:?}", yl);
-    println!("yr = {:?}", yr);
+    // println!("yl = {:?}", yl);
+    // println!("yr = {:?}", yr);
 
     let gaml = phil * prm.gamma1 + (1. - phil) * prm.gamma2;
     let gamr = phir * prm.gamma1 + (1. - phir) * prm.gamma2;
@@ -386,10 +386,10 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     let fl = gaml - 1.;
     let fr = gamr - 1.;
 
-    println!(
-        "gaml={} gamr={} pinfl={} pinfr={}",
-        gaml, gamr, pinfl, pinfr
-    );
+    // println!(
+    //     "gaml={} gamr={} pinfl={} pinfr={}",
+    //     gaml, gamr, pinfl, pinfr
+    // );
 
     let eps = 1e-12;
     let mut err = f64::MAX;
@@ -397,29 +397,29 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     let mut pn = 0.5 * (pl + pr);
 
     let mut iter = 0;
-    while err > eps {
+    while err > eps && iter < 100 {
         iter += 1;
-        println!("iter={}", iter);
+        //println!("iter={}", iter);
 
         let mut ff = ul - ur;
         let mut df = 0.;
 
-        println!(
-            "rl={} rr={} ul={} ur={} pl={} pr={} pn={}",
-            rl, rr, ul, ur, pl, pr, pn
-        );
-        ff = ff - xhia(pinfl, gaml, 1. / rl, pl, pn);
-        df = df - dxhia(pinfl, gaml, 1. / rl, pl, pn);
-        println!("ff1={} df={}", ff, df);
+        // println!(
+        //     "rl={} rr={} ul={} ur={} pl={} pr={} pn={}",
+        //     rl, rr, ul, ur, pl, pr, pn
+        // );
+        ff -=  xhia(pinfl, gaml, 1. / rl, pl, pn);
+        df -=  dxhia(pinfl, gaml, 1. / rl, pl, pn);
+        //println!("ff1={} df={}", ff, df);
 
         // terme de droite (voir Rouy)
 
-        ff = ff - xhia(pinfr, gamr, 1. / rr, pr, pn);
-        df = df - dxhia(pinfr, gamr, 1. / rr, pr, pn);
-        println!("ff2={} df={}", ff, df);
+        ff -=  xhia(pinfr, gamr, 1. / rr, pr, pn);
+        df -=  dxhia(pinfr, gamr, 1. / rr, pr, pn);
+        //println!("ff2={} df={}", ff, df);
 
         let dp = ff / df;
-        println!("pn={} dp={} err={}", pn, dp, err);
+        //println!("pn={} dp={} err={}", pn, dp, err);
 
         pn -= dp;
         err = dp.abs();
@@ -456,7 +456,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     vit[2] = um;
 
     // 3-détente
-    if (pm <= pr) {
+    if pm <= pr {
         vit[3] = um2 + 1. / dpsia(pinfr, gamr, 1. / rr, pr, pm) / r2;
         vit[4] = ur + 1. / dpsia(pinfr, gamr, 1. / rr, pr, pr) / rr;
     }
@@ -469,9 +469,9 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
 
     // let mut r;
     // let mut p;
-    // let mut u;
-    let mut f;
-    let mut pinf;
+    // // let mut u;
+    // let mut f;
+    // let mut pinf;
     //let mut phi;
     let (r,u,v,p,phi) =
     // état gauche
@@ -479,56 +479,54 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
         // r = rl;
         // p = pl;
         // u = ul;
-        f = fl;
-        pinf = pinfl;
+        // f = fl;
+        // pinf = pinfl;
         //phi = phil;
-        (rl, ul, 0.,pl,phil)
+        (rl, ul, vl,pl,phil)
     } else if xi >= vit[0] && xi < vit[1] {
         let p = pp(pinfl, fl + 1., 1. / rl, pl, ul - xi);
         let r = 1. / ha(pinfl, fl + 1., 1. / rl, pl, p);
-        f = fl;
-        pinf = pinfl;
+        // f = fl;
+        // pinf = pinfl;
         let phi = phil;
         let u = ul - psia(pinfl, fl + 1., 1. / rl, pl, p);
-        (r,u,0.,p,phi)
+        (r,u,vl,p,phi)
     } else if xi >= vit[1] && xi < vit[2] {
         let r = r1;
         let p = pm;
         let u = um1;
-        f = fl;
-        pinf = pinfl;
+        // f = fl;
+        // pinf = pinfl;
         let phi = phil;
-        (r,u,0.,p,phi)
+        (r,u,vl,p,phi)
     } else if xi >= vit[2] && xi <= vit[3] {
         let r = r2;
         let p = pm;
         let u = um2;
-        f = fr;
-        pinf = pinfr;
+        // f = fr;
+        // pinf = pinfr;
         let phi = phir;
-        (r,u,0.,p,phi)
+        (r,u,vr,p,phi)
     } else if xi > vit[3] && xi < vit[4] {
         let p = pp(pinfr, fr + 1., 1. / rr, pr, xi - ur);
         let r = 1. / ha(pinfr, fr + 1., 1. / rr, pr, p);
-        f = fr;
-        pinf = pinfr;
+        // f = fr;
+        // pinf = pinfr;
         let phi = phir;
         let u = ur + psia(pinfr, fr + 1., 1. / rr, pr, p);
-        (r,u,0.,p,phi)
+        (r,u,vr,p,phi)
     } else {
         let r = rr;
         let p = pr;
         let u = ur;
-        f = fr;
-        pinf = pinfr;
+        // f = fr;
+        // pinf = pinfr;
         let phi = phir;
-        (r,u,0.,p,phi)
+        (r,u,vr,p,phi)
     };
 
     let y = [r, u, v, p, phi];
-    let w = prim2bal_euler(y, prm);
-
-    w
+    prim2bal_euler(y, prm)
 }
 
 #[cfg(test)]
