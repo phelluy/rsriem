@@ -2,19 +2,21 @@ use rsriem::{bal2prim_euler, prim2bal_euler, riem_euler, Euler};
 
 fn main() {
     // test solver de Riemann Euler bifluide
-    let xmin = -1.;
-    let xmax = 1.;
+    let xmin = -2.;
+    let xmax = 2.;
     let nx = 1000;
     let tmax = 0.2;
 
     let rl = 1.;
-    let ul = -0.5;
+    let ul = -5.916079784;
+    //let ul = -4.;
     let vl = 0.;
     let pl = 1.;
     let phil = 1.;
 
     let rr = 1.;
-    let ur = 0.5;
+    //let ur = 4.;
+    let ur = 5.916079784;
     let vr = 0.;
     let pr = 1.;
     let phir = 1.;

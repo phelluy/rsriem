@@ -394,7 +394,22 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     let eps = 1e-12;
     let mut err = f64::MAX;
 
-    let mut pn = 0.5 * (pl + pr);
+    // -p0 is the minimum pressure
+    let p0 = f64::min(pinfl, pinfr);
+
+    let mut pn = -p0+ 1e-15;
+
+    // critère d'apparition du vide
+    //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
+    //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
+    let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
+
+    if crit < 0. {
+        err = 0.;
+    }
+
+    println!("crit={}", crit);
+
 
     let mut iter = 0;
     while err > eps && iter < 100 {
