@@ -57,7 +57,7 @@ pub fn prim2bal_euler(y: [f64; 5], prm: &Euler) -> [f64; 5] {
     let phi = y[4];
     let pinf = phi * prm.pinf1 + (1. - phi) * prm.pinf2;
     let gam = phi * prm.gamma1 + (1. - phi) * prm.gamma2;
-    let energ = (p - gam * pinf) / (gam - 1.) + 0.5 * r * (u * u + v * v);
+    let energ = (p + gam * pinf) / (gam - 1.) + 0.5 * r * (u * u + v * v);
     [r, r * u, r * v, energ, r * phi]
 }
 
@@ -353,11 +353,13 @@ fn pp(pinfa: f64, ga: f64, ta: f64, pa: f64, psi: f64) -> f64 {
 
 fn xhia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
     if pl > pa {
-        phia(pinfa, ga, ta, pa, pl)
-        //println!("phia={}, ga={}, ta={}, pa={}, pl={}", t0, ga, ta, pa, pl);
+        let phia = phia(pinfa, ga, ta, pa, pl);
+        //println!("phia={}, ga={}, ta={}, pa={}, pl={}", phia, ga, ta, pa, pl);
+        phia
     } else {
-        psia(pinfa, ga, ta, pa, pl)
-        //println!("psia={}, ga={}, ta={}, pa={}, pl={}", t0, ga, ta, pa, pl);
+        let psia = psia(pinfa, ga, ta, pa, pl);
+        //println!("psia={}, ga={}, ta={}, pa={}, pl={}", psia,ga, ta, pa, pl);
+        psia
     }
 }
 
@@ -397,18 +399,26 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     // -p0 is the minimum pressure
     let p0 = f64::min(pinfl, pinfr);
 
-    let mut pn = -p0+ 1e-15;
+    let mut pn = -p0+ 1e-12;
+    let dvv = xhia(pinfr,fr+1.,1./rr,pr,pn)+xhia(pinfl,fl+1.,1./rl,pl,pn);
+    // println!("delta_v max = {}",dvv/2.);
+    // println!("crit_l = {} p0={}",xhia(pinfl,fl+1.,1./rl,pl,pn),p0);
+    // println!("crit_r = {} p0={}",xhia(pinfr,fr+1.,1./rr,pr,pn),p0);
 
     // critère d'apparition du vide
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
-    let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
+    let crit = (ul-ur-xhia(pinfr,fr+1.,1./rr,pr,pn))-(xhia(pinfl,fl+1.,1./rl,pl,pn));
+    // println!("crit={}", crit);
+    // let crit = 1.;
 
-    if crit < 0. {
+    // apparition du vide: on prend de la marge
+    // à cause des erreurs d'arrondi
+    // liés à la fonction xhia (qui contient des fonctions puissance fractionnaire)
+    if crit < 1e-6 {
         err = 0.;
     }
 
-    println!("crit={}", crit);
 
 
     let mut iter = 0;
@@ -457,11 +467,10 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
 
     let mut vit = [0.; 5];
     // vitesses caractéristiques
-    // 1-détente
-    if pm <= pl {
+    if pm <= pl {  // 1-détente
         vit[0] = ul - 1. / dpsia(pinfl, gaml, 1. / rl, pl, pl) / rl;
         vit[1] = um1 - 1. / dpsia(pinfl, gaml, 1. / rl, pl, pm) / r1;
-    } else {
+    } else {  // choc
         vit[0] =
             ul - f64::sqrt(((gaml + 1.) * (pm + pinfl) + (gaml - 1.) * (pl + pinfl)) * 0.5 / rl);
         vit[1] = vit[0];
@@ -508,16 +517,16 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
         (r,u,vl,p,phi)
     } else if xi >= vit[1] && xi < vit[2] {
         let r = r1;
-        let p = pm;
-        let u = um1;
+        let p = pm;   // pm = p0 si vide
+        let u = um1;  // um1 = um2 sauf si vide
         // f = fl;
         // pinf = pinfl;
         let phi = phil;
         (r,u,vl,p,phi)
     } else if xi >= vit[2] && xi <= vit[3] {
         let r = r2;
-        let p = pm;
-        let u = um2;
+        let p = pm;  // pm = p0 si vide
+        let u = um2; // um1 = um2 sauf si vide
         // f = fr;
         // pinf = pinfr;
         let phi = phir;
