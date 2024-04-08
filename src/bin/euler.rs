@@ -24,7 +24,7 @@ fn main() {
     let phir = 1.;
 
     let rl = 1.;
-    let ul = -10.;
+    let ul = -14.;
     //let ul = - 7.;
     //let ul = -4.;
     let vl = 0.;
@@ -33,10 +33,10 @@ fn main() {
 
     let rr = 1000.;
     //let ur = 4.;
-    let ur = 10.;
-    //let ur = 7.;
+    let ur = 0.;
+    let ur = 7.;
     let vr = 0.;
-    let pr = 1e5;
+    let pr = -1e5;
     let phir = 0.;
 
 

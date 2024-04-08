@@ -409,7 +409,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
     let crit = (ul-ur-xhia(pinfr,fr+1.,1./rr,pr,pn))-(xhia(pinfl,fl+1.,1./rl,pl,pn));
-    // println!("crit={}", crit);
+    println!("crit={}", crit);
     // let crit = 1.;
 
     // apparition du vide: on prend de la marge
