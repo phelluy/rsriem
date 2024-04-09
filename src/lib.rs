@@ -48,6 +48,17 @@ impl Euler {
             pinf2,
         }
     }
+    pub fn gamma(&self,phi: f64) -> f64 {
+        phi * self.gamma1 + (1. - phi) * self.gamma2
+    }
+    pub fn pinf(&self,phi: f64) -> f64 {
+        phi * self.pinf1 + (1. - phi) * self.pinf2
+    }
+    pub fn cson(&self, rho: f64,  p: f64,phi: f64) -> f64 {
+        let gam = self.gamma(phi);
+        let pinf = self.pinf(phi);
+        (gam * (p + pinf) / rho).sqrt()
+    }
 }
 
 pub fn prim2bal_euler(y: [f64; 5], prm: &Euler) -> [f64; 5] {
