@@ -54,7 +54,7 @@ impl Euler {
     pub fn pinf(&self,phi: f64) -> f64 {
         phi * self.pinf1 + (1. - phi) * self.pinf2
     }
-    pub fn cson(&self, rho: f64,  p: f64,phi: f64) -> f64 {
+    pub fn cson(&self, rho: f64, p: f64,phi: f64) -> f64 {
         let gam = self.gamma(phi);
         let pinf = self.pinf(phi);
         (gam * (p + pinf) / rho).sqrt()
@@ -421,7 +421,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
     let crit = (ul-ur-xhia(pinfr,fr+1.,1./rr,pr,pn))-(xhia(pinfl,fl+1.,1./rl,pl,pn));
-    println!("crit={}", crit);
+    //println!("crit={}", crit);
     // let crit = 1.;
 
     // apparition du vide: on prend de la marge
