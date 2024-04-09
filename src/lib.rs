@@ -1,4 +1,5 @@
 /// Physical parameters for the two-fluid isothermal Euler equations.
+#[derive(Debug, Clone)]
 pub struct EulerIsothermal {
     c: f64,   // speed of sound
     p0: f64,  // reference pressure
