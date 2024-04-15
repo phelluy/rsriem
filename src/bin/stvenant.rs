@@ -8,13 +8,13 @@ fn main() {
     let nx = 1000;
     let tmax = 1.;
 
-    let hl = 2.;
-    let ul = 0.;
-    let vl = 0.;
+    let hl = 1.;
+    let ul = -10.;
+    let vl = -1.;
 
     let hr = 1.;
-    let ur = 0.;
-    let vr = 0.;
+    let ur = 10.;
+    let vr = 1.;
 
     let yl = [hl, ul, vl];
     let yr = [hr, ur, vr];
@@ -36,12 +36,15 @@ fn main() {
         .collect::<Vec<f64>>();
 
     let mut u = vec![0.; nx];
+    let mut v = vec![0.; nx];
     let mut h = vec![0.; nx];
     for i in 0..nx {
         let w = riem_sw(wl, wr, xi[i], &prm);
         let y = bal2prim_sw(w, &prm);
         u[i] = y[1];
+        v[i] = y[2];
         h[i] = y[0];
+
     }
 
     // plot the result
@@ -51,4 +54,6 @@ fn main() {
     plot(&xi, &h, &h);
     println!("u");
     plot(&xi, &u, &u);
+    println!("v");
+    plot(&xi, &v, &v);
 }

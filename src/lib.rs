@@ -161,10 +161,21 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
 
     let g = prm.g;
 
+    // critère d'apparition du vide
+    let crit = ul - ur + 2. * f64::sqrt(g * hl) + 2. * f64::sqrt(g * hr);
+
+
     // méthode de Newton
     let mut hs = 1e-6;
     let mut dh: f64 = 1.;
     let mut iter = 0;
+
+    if crit < 0. {
+        hs = 1e-10;
+        dh = 0.;
+        println!("Vacuum ! crit={}", crit);
+    }
+
     while dh.abs() > 1e-10 {
         dh = -k(hl, ul, hr, ur, hs,prm) / dk(hl, hr, hs,prm);
         hs += dh;
@@ -179,15 +190,18 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
     }
     let sqrt = f64::sqrt;
 
-    let us = ul - (hs - hl) * z(hl, hs,prm);
+    let us1 = ul - (hs - hl) * z(hl, hs,prm);
+    let us2 = ur + (hs - hr) * z(hr, hs,prm);
+
+
     let (lambda1m, lambda1p) = if hs < hl {
-        (ul - sqrt(g * hl), us - sqrt(g * hs))
+        (ul - sqrt(g * hl), us1 - sqrt(g * hs))
     } else {
         let j = -sqrt(g) * sqrt(hl * hs) * sqrt((hl + hs) / 2.);
         (ul + j / hl, ul + j / hl)
     };
     let (lambda2m, lambda2p) = if hs < hr {
-        (us + sqrt(g * hs), ur + sqrt(g * hr))
+        (us2 + sqrt(g * hs), ur + sqrt(g * hr))
     } else {
         let j = sqrt(g) * sqrt(hr * hs) * sqrt((hr + hs) / 2.);
         (ur + j / hr, ur + j / hr)
@@ -199,12 +213,14 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
         (hl, ul, vl)
     } else if xi < lambda1p {
         let u1 = (ul + 2. * sqrt(g * hl) + 2. * xi) / 3.;
-        ((u1 - xi) * (u1 - xi) / g, u1, ul)
-    }  else if xi < us {
-        (hs, us, vl)
+        ((u1 - xi) * (u1 - xi) / g, u1, vl)
+    }  else if xi < us1 {
+        (hs, 0.5*(us1+us2), 0.)
     }
-    else if xi < lambda2m {
-        (hs, us, vr) 
+    else if xi < us2 {
+        (hs, 0.5*(us1+us2), 0.)
+    } else if xi < lambda2m {
+        (hs, us2, vr) 
     } else if xi < lambda2p {
         let u2 = (ur - 2. * sqrt(g * hr) + 2. * xi) / 3.;
         ((u2 - xi) * (u2 - xi) / g, u2, vr)
