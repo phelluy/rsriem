@@ -9,11 +9,11 @@ fn main() {
     let tmax = 1.;
 
     let hl = 1.;
-    let ul = -10.;
+    let ul = -4.;
     let vl = -1.;
 
     let hr = 1.;
-    let ur = 10.;
+    let ur = 4.;
     let vr = 1.;
 
     let yl = [hl, ul, vl];
