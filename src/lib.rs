@@ -546,7 +546,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     //     gaml, gamr, pinfl, pinfr
     // );
 
-    let eps = 1e-12;
+    let eps = 1e-10;
     let mut err = f64::MAX;
 
     // -p0 is the minimum pressure
@@ -600,7 +600,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
         //println!("pn={} dp={} err={}", pn, dp, err);
 
         pn -= dp;
-        err = dp.abs();
+        err = dp.abs()/pl.max(pr);
     }
     let pm = pn;
     let r2 = 1. / ha(pinfr, gamr, 1. / rr, pr, pn);
