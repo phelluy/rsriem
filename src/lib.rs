@@ -87,9 +87,134 @@ pub fn bal2prim_euler(w: [f64; 5], prm: &Euler) -> [f64; 5] {
 
 /// Physical parameters for the shallow water equations.
 #[allow(dead_code)]
-struct ShallowWater {
+pub struct ShallowWater {
     g: f64, // gravity
 }
+
+impl ShallowWater {
+    pub fn new(g: f64) -> Self {
+        Self { g }
+    }
+}
+
+pub fn prim2bal_sw(y: [f64; 3], prm: &ShallowWater) -> [f64; 3] {
+    let h = y[0];
+    let u = y[1];
+    let v = y[2];
+    [h, h * u, h * v]
+}
+
+pub fn bal2prim_sw(w: [f64; 3], prm: &ShallowWater) -> [f64; 3] {
+    let h = w[0];
+    let hu = w[1];
+    let hv = w[2];
+    let u = hu / h;
+    let v = hv / h;
+    [h, u, v]
+}
+
+/// St Venant equations
+
+fn z(a: f64, b: f64, prm: &ShallowWater) -> f64 {
+
+    let g = prm.g;
+
+    let sqrt = f64::sqrt;
+    if a > b {
+        2. * sqrt(g) / (sqrt(a) + sqrt(b))
+    } else {
+        sqrt(g) * sqrt((a + b) / 2. / a / b)
+    }
+}
+
+fn dz(a: f64, b: f64, prm: &ShallowWater) -> f64 {
+    let g = prm.g;
+    let sqrt = f64::sqrt;
+    let pow = f64::powf;
+    if a > b {
+        -sqrt(g) * pow(sqrt(a) + sqrt(b), -0.2e1) * pow(b, -0.1e1 / 0.2e1)
+    } else {
+        sqrt(g)
+            * sqrt(0.2e1)
+            * pow((a + b) / a / b, -0.1e1 / 0.2e1)
+            * (0.1e1 / a / b - (a + b) / a * pow(b, -0.2e1))
+            / 0.4e1
+    }
+}
+
+fn k(hl: f64, ul: f64, hr: f64, ur: f64, h: f64, prm: &ShallowWater) -> f64 {
+    ul - (h - hl) * z(hl, h,prm) - ur - (h - hr) * z(hr, h, prm)
+}
+
+fn dk(hl: f64, hr: f64, h: f64, prm: &ShallowWater) -> f64 {
+    -z(hl, h, prm) - (h - hl) * dz(hl, h, prm) - z(hr, h, prm) - (h - hr) * dz(hr, h, prm)
+}
+
+// riemann solver st venant
+pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64; 3] {
+    let hl = wl[0];
+    let ul = wl[1] / hl;
+    let vl = wl[2] / hl;
+    let hr = wr[0];
+    let ur = wr[1] / hr;
+    let vr = wr[2] / hr;
+
+    let g = prm.g;
+
+    // méthode de Newton
+    let mut hs = 1e-6;
+    let mut dh: f64 = 1.;
+    let mut iter = 0;
+    while dh.abs() > 1e-10 {
+        dh = -k(hl, ul, hr, ur, hs,prm) / dk(hl, hr, hs,prm);
+        hs += dh;
+        iter += 1;
+        // println!(
+        //     "iter ={} hl={} ul={} hr={} ur={} hs={} dh={}",
+        //     iter, hl, ul, hr, ur, hs, dh
+        // );
+        if iter > 20 {
+            panic!();
+        }
+    }
+    let sqrt = f64::sqrt;
+
+    let us = ul - (hs - hl) * z(hl, hs,prm);
+    let (lambda1m, lambda1p) = if hs < hl {
+        (ul - sqrt(g * hl), us - sqrt(g * hs))
+    } else {
+        let j = -sqrt(g) * sqrt(hl * hs) * sqrt((hl + hs) / 2.);
+        (ul + j / hl, ul + j / hl)
+    };
+    let (lambda2m, lambda2p) = if hs < hr {
+        (us + sqrt(g * hs), ur + sqrt(g * hr))
+    } else {
+        let j = sqrt(g) * sqrt(hr * hs) * sqrt((hr + hs) / 2.);
+        (ur + j / hr, ur + j / hr)
+    };
+    // println!("lambda1m={} lambda1p={}", lambda1m, lambda1p);
+    // println!("lambda2m={} lambda2p={}", lambda2m, lambda2p);
+    // panic!();
+    let (h, u, v) = if xi < lambda1m {
+        (hl, ul, vl)
+    } else if xi < lambda1p {
+        let u1 = (ul + 2. * sqrt(g * hl) + 2. * xi) / 3.;
+        ((u1 - xi) * (u1 - xi) / g, u1, ul)
+    }  else if xi < us {
+        (hs, us, vl)
+    }
+    else if xi < lambda2m {
+        (hs, us, vr) 
+    } else if xi < lambda2p {
+        let u2 = (ur - 2. * sqrt(g * hr) + 2. * xi) / 3.;
+        ((u2 - xi) * (u2 - xi) / g, u2, vr)
+    } else {
+        (hr, ur, vr)
+    };
+    [h, h * u, h * v]
+}
+
+
 
 /// Riemann solver functions for the two-fluid isothermal Euler equations.
 // Riemann solver
