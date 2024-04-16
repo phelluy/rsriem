@@ -7,21 +7,21 @@ fn main() {
     let nx = 1000;
     let tmax = 0.001;
 
-    let rl = 1.;
-    let ul = -5.916079783099617;
+    let _rl = 1.;
+    let _ul = -5.916079783099617;
     //let ul = - 7.;
     //let ul = -4.;
-    let vl = 0.;
-    let pl = 1.;
-    let phil = 1.;
+    let _vl = 0.;
+    let _pl = 1.;
+    let _phil = 1.;
 
-    let rr = 1.;
+    let _rr = 1.;
     //let ur = 4.;
-    let ur = 5.916079783099617;
+    let _ur = 5.916079783099617;
     //let ur = 7.;
-    let vr = 0.;
-    let pr = 1.;
-    let phir = 1.;
+    let _vr = 0.;
+    let _pr = 1.;
+    let _phir = 1.;
 
     let rl = 1.;
     let ul = -14.;
@@ -33,17 +33,17 @@ fn main() {
 
     let rr = 1000.;
     //let ur = 4.;
-    let ur = 0.;
+    let _ur = 0.;
     let ur = 7.;
     let vr = 0.;
     let pr = -1e5;
     let phir = 0.;
 
 
-    let gamma1 = 1.4;
-    let pinf1 = 0.;
-    let gamma2 = 1.4;
-    let pinf2 = 0.;
+    let _gamma1 = 1.4;
+    let _pinf1 = 0.;
+    let _gamma2 = 1.4;
+    let _pinf2 = 0.;
 
     // params barberon-helluy 2005
     let gamma1 = 1.3;
