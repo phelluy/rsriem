@@ -6,7 +6,7 @@ fn main() {
     let xmin = -10.;
     let xmax = 10.;
     let nx = 1000;
-    let tmax = 1.;
+    let _tmax = 1.;
 
     let hl = 1.;
     let ul = -4.;

@@ -97,14 +97,14 @@ impl ShallowWater {
     }
 }
 
-pub fn prim2bal_sw(y: [f64; 3], prm: &ShallowWater) -> [f64; 3] {
+pub fn prim2bal_sw(y: [f64; 3], _prm: &ShallowWater) -> [f64; 3] {
     let h = y[0];
     let u = y[1];
     let v = y[2];
     [h, h * u, h * v]
 }
 
-pub fn bal2prim_sw(w: [f64; 3], prm: &ShallowWater) -> [f64; 3] {
+pub fn bal2prim_sw(w: [f64; 3], _prm: &ShallowWater) -> [f64; 3] {
     let h = w[0];
     let hu = w[1];
     let hv = w[2];
@@ -553,7 +553,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     let p0 = f64::min(pinfl, pinfr);
 
     let mut pn = -p0+ 1e-12;
-    let dvv = xhia(pinfr,fr+1.,1./rr,pr,pn)+xhia(pinfl,fl+1.,1./rl,pl,pn);
+    let _dvv = xhia(pinfr,fr+1.,1./rr,pr,pn)+xhia(pinfl,fl+1.,1./rl,pl,pn);
     // println!("delta_v max = {}",dvv/2.);
     // println!("crit_l = {} p0={}",xhia(pinfl,fl+1.,1./rl,pl,pn),p0);
     // println!("crit_r = {} p0={}",xhia(pinfr,fr+1.,1./rr,pr,pn),p0);
