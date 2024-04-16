@@ -546,8 +546,6 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     //     gaml, gamr, pinfl, pinfr
     // );
 
-    let eps = 1e-10;
-    let mut err = f64::MAX;
 
     // -p0 is the minimum pressure
     let p0 = f64::min(pinfl, pinfr);
@@ -568,12 +566,13 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     // apparition du vide: on prend de la marge
     // à cause des erreurs d'arrondi
     // liés à la fonction xhia (qui contient des fonctions puissance fractionnaire)
+    let mut err = f64::MAX;
     if crit < 1e-6 {
         err = 0.;
     }
 
 
-
+    let eps = 1e-12;
     let mut iter = 0;
     while err > eps && iter < 100 {
         iter += 1;
@@ -600,7 +599,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
         //println!("pn={} dp={} err={}", pn, dp, err);
 
         pn -= dp;
-        err = dp.abs()/pl.max(pr);
+        err = dp.abs();//pl.max(pr);
     }
     let pm = pn;
     let r2 = 1. / ha(pinfr, gamr, 1. / rr, pr, pn);
