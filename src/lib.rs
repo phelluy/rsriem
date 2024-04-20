@@ -176,7 +176,7 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
         println!("Vacuum ! crit={}", crit);
     }
 
-    while dh.abs() > 1e-10 {
+    while dh.abs() > 1e-12 {
         dh = -k(hl, ul, hr, ur, hs,prm) / dk(hl, hr, hs,prm);
         hs += dh;
         iter += 1;
