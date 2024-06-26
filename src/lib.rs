@@ -705,6 +705,110 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     prim2bal_euler(y, prm)
 }
 
+
+/// Riemann solver for the two-fluid Euler equations
+/// Lagrangian case
+pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> [f64; 5] {
+    let yl = bal2prim_euler(wl, prm);
+    let [rl, ul, vl, pl, phil] = yl;
+    let yr = bal2prim_euler(wr, prm);
+    let [rr, ur, vr, pr, phir] = yr;
+
+    // check that the normal is unitary
+    assert!((vn[0]*vn[0]+vn[1]*vn[1] - 1.).abs() < 1e-12);
+
+    let ul = ul * vn[0] + vl * vn[1];
+    let ur = ur * vn[0] + vr * vn[1];
+
+    // println!("yl = {:?}", yl);
+    // println!("yr = {:?}", yr);
+
+    let gaml = phil * prm.gamma1 + (1. - phil) * prm.gamma2;
+    let gamr = phir * prm.gamma1 + (1. - phir) * prm.gamma2;
+    let pinfl = phil * prm.pinf1 + (1. - phil) * prm.pinf2;
+    let pinfr = phir * prm.pinf1 + (1. - phir) * prm.pinf2;
+    let fl = gaml - 1.;
+    let fr = gamr - 1.;
+
+    // println!(
+    //     "gaml={} gamr={} pinfl={} pinfr={}",
+    //     gaml, gamr, pinfl, pinfr
+    // );
+
+
+    // -p0 is the minimum pressure
+    let p0 = f64::min(pinfl, pinfr);
+
+    let mut pn = -p0+ 1e-12;
+    let _dvv = xhia(pinfr,fr+1.,1./rr,pr,pn)+xhia(pinfl,fl+1.,1./rl,pl,pn);
+    // println!("delta_v max = {}",dvv/2.);
+    // println!("crit_l = {} p0={}",xhia(pinfl,fl+1.,1./rl,pl,pn),p0);
+    // println!("crit_r = {} p0={}",xhia(pinfr,fr+1.,1./rr,pr,pn),p0);
+
+    // critère d'apparition du vide
+    //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
+    //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
+    let crit = (ul-ur-xhia(pinfr,fr+1.,1./rr,pr,pn))-(xhia(pinfl,fl+1.,1./rl,pl,pn));
+    //println!("crit={}", crit);
+    // let crit = 1.;
+
+    // apparition du vide: on prend de la marge
+    // à cause des erreurs d'arrondi
+    // liés à la fonction xhia (qui contient des fonctions puissance fractionnaire)
+    let mut err = f64::MAX;
+    if crit < 1e-6 {
+        err = 0.;
+    }
+
+
+    let eps = 1e-12;
+    let mut iter = 0;
+    while err > eps && iter < 100 {
+        iter += 1;
+        //println!("iter={}", iter);
+
+        let mut ff = ul - ur;
+        let mut df = 0.;
+
+        // println!(
+        //     "rl={} rr={} ul={} ur={} pl={} pr={} pn={}",
+        //     rl, rr, ul, ur, pl, pr, pn
+        // );
+        ff -=  xhia(pinfl, gaml, 1. / rl, pl, pn);
+        df -=  dxhia(pinfl, gaml, 1. / rl, pl, pn);
+        //println!("ff1={} df={}", ff, df);
+
+        // terme de droite (voir Rouy)
+
+        ff -=  xhia(pinfr, gamr, 1. / rr, pr, pn);
+        df -=  dxhia(pinfr, gamr, 1. / rr, pr, pn);
+        //println!("ff2={} df={}", ff, df);
+
+        let dp = ff / df;
+        //println!("pn={} dp={} err={}", pn, dp, err);
+
+        pn -= dp;
+        err = dp.abs();//pl.max(pr);
+    }
+    // let pm = pn;
+    // let r2 = 1. / ha(pinfr, gamr, 1. / rr, pr, pn);
+    // let r1 = 1. / ha(pinfl, gaml, 1. / rl, pl, pn);
+
+    // vitesse de la discontinuité de contact
+    // en l'absence de vide, um1 = um2
+    let um1 = ul - xhia(pinfl, gaml, 1. / rl, pl, pn);
+    let um2 = ur + xhia(pinfr, gamr, 1. / rr, pr, pn);
+    let um = if pinfl > pinfr {
+        um1
+    } else if pinfl < pinfr {
+        um2
+    } else {
+        0.5 * (um1 + um2)
+    };
+    [0.,pn* vn[0],pn*vn[1],pn* um,0.]
+}
+
+
 #[cfg(test)]
 // test that bal2prim_isot and prim2bal_isot are consistent
 #[test]
@@ -758,4 +862,26 @@ fn test_prim2bal_euler() {
     for i in 0..5 {
         assert!((w[i] - w2[i]).abs() < 1e-12);
     }
+}
+
+#[test]
+fn test_lagflux_euler() {
+    let gamma1 = 1.4;
+    let pinf1 = 0.;
+    let gamma2 = 1.4;
+    let pinf2 = 0.;
+    let prm = Euler::new(gamma1, gamma2, pinf1, pinf2);
+    let w = [1., 1., 0., 3., 1.];
+    let y = bal2prim_euler(w, &prm);
+    let u = y[1];
+    let v = y[2];
+    let p = y[3];
+    let vn = [1./(2f64).sqrt(), 1./(2f64).sqrt()];
+    let flux = lagflux_euler(w, w, vn, &prm);
+    println!("flux={:?}", flux);
+    let flux2 = [0., p*vn[0], p*vn[1], p*(u*vn[0]+v*vn[1]), 0.];
+    for iv in 0..5 {
+        assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
+    }
+
 }
