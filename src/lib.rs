@@ -423,7 +423,9 @@ pub fn riemisot(wl: [f64; 4], wr: [f64; 4], xi: f64, prm: &EulerIsothermal) -> [
 
 fn phia(pinfa: f64, ga: f64, ta: f64, pa: f64, pl: f64) -> f64 {
     let mut t0;
-    t0 = ((pl - pa) * (ta - ha(pinfa, ga, ta, pa, pl))).sqrt();
+    t0 = (pl - pa) * (ta - ha(pinfa, ga, ta, pa, pl));
+    t0 = t0.abs();
+    t0 = t0.sqrt();
     // cas des chocs non entropiques (ne sert qu'au déboguage)
     if pl <= pa {
         t0 = -t0;
