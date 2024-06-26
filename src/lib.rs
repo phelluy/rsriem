@@ -708,7 +708,7 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
 
 /// Riemann solver for the two-fluid Euler equations
 /// Lagrangian case
-pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> [f64; 5] {
+pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f64; 5],(f64,f64)) {
     let yl = bal2prim_euler(wl, prm);
     let [rl, ul, vl, pl, phil] = yl;
     let yr = bal2prim_euler(wr, prm);
@@ -805,7 +805,7 @@ pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> [f6
     } else {
         0.5 * (um1 + um2)
     };
-    [0.,pn* vn[0],pn*vn[1],pn* um,0.]
+    ([0.,pn* vn[0],pn*vn[1],pn* um,0.],(um,pn))
 }
 
 
@@ -877,11 +877,13 @@ fn test_lagflux_euler() {
     let v = y[2];
     let p = y[3];
     let vn = [1./(2f64).sqrt(), 1./(2f64).sqrt()];
-    let flux = lagflux_euler(w, w, vn, &prm);
+    let (flux,(un2,p2)) = lagflux_euler(w, w, vn, &prm);
     println!("flux={:?}", flux);
     let flux2 = [0., p*vn[0], p*vn[1], p*(u*vn[0]+v*vn[1]), 0.];
     for iv in 0..5 {
         assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
     }
+    assert!((un2 - u*vn[0] - v*vn[1]).abs() < 1e-12);
+    assert!((p2 - p).abs() < 1e-12);
 
 }
