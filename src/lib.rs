@@ -48,13 +48,13 @@ impl Euler {
             pinf2,
         }
     }
-    pub fn gamma(&self,phi: f64) -> f64 {
+    pub fn gamma(&self, phi: f64) -> f64 {
         phi * self.gamma1 + (1. - phi) * self.gamma2
     }
-    pub fn pinf(&self,phi: f64) -> f64 {
+    pub fn pinf(&self, phi: f64) -> f64 {
         phi * self.pinf1 + (1. - phi) * self.pinf2
     }
-    pub fn cson(&self, rho: f64, p: f64,phi: f64) -> f64 {
+    pub fn cson(&self, rho: f64, p: f64, phi: f64) -> f64 {
         let gam = self.gamma(phi);
         let pinf = self.pinf(phi);
         (gam * (p + pinf) / rho).sqrt()
@@ -116,7 +116,6 @@ pub fn bal2prim_sw(w: [f64; 3], _prm: &ShallowWater) -> [f64; 3] {
 /// St Venant equations
 
 fn z(a: f64, b: f64, prm: &ShallowWater) -> f64 {
-
     let g = prm.g;
 
     let sqrt = f64::sqrt;
@@ -143,7 +142,7 @@ fn dz(a: f64, b: f64, prm: &ShallowWater) -> f64 {
 }
 
 fn k(hl: f64, ul: f64, hr: f64, ur: f64, h: f64, prm: &ShallowWater) -> f64 {
-    ul - (h - hl) * z(hl, h,prm) - ur - (h - hr) * z(hr, h, prm)
+    ul - (h - hl) * z(hl, h, prm) - ur - (h - hr) * z(hr, h, prm)
 }
 
 fn dk(hl: f64, hr: f64, h: f64, prm: &ShallowWater) -> f64 {
@@ -151,7 +150,7 @@ fn dk(hl: f64, hr: f64, h: f64, prm: &ShallowWater) -> f64 {
 }
 
 // riemann solver st venant
-pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64; 3] {
+pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater) -> [f64; 3] {
     let hl = wl[0];
     let ul = wl[1] / hl;
     let vl = wl[2] / hl;
@@ -163,7 +162,6 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
 
     // critère d'apparition du vide
     let crit = ul - ur + 2. * f64::sqrt(g * hl) + 2. * f64::sqrt(g * hr);
-
 
     // méthode de Newton
     let mut hs = 1e-6;
@@ -177,7 +175,7 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
     }
 
     while dh.abs() > 1e-12 {
-        dh = -k(hl, ul, hr, ur, hs,prm) / dk(hl, hr, hs,prm);
+        dh = -k(hl, ul, hr, ur, hs, prm) / dk(hl, hr, hs, prm);
         hs += dh;
         iter += 1;
         // println!(
@@ -190,9 +188,8 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
     }
     let sqrt = f64::sqrt;
 
-    let us1 = ul - (hs - hl) * z(hl, hs,prm);
-    let us2 = ur + (hs - hr) * z(hr, hs,prm);
-
+    let us1 = ul - (hs - hl) * z(hl, hs, prm);
+    let us2 = ur + (hs - hr) * z(hr, hs, prm);
 
     let (lambda1m, lambda1p) = if hs < hl {
         (ul - sqrt(g * hl), us1 - sqrt(g * hs))
@@ -214,13 +211,12 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
     } else if xi < lambda1p {
         let u1 = (ul + 2. * sqrt(g * hl) + 2. * xi) / 3.;
         ((u1 - xi) * (u1 - xi) / g, u1, vl)
-    }  else if xi < us1 {
-        (hs, 0.5*(us1+us2), 0.)
-    }
-    else if xi < us2 {
-        (hs, 0.5*(us1+us2), 0.)
+    } else if xi < us1 {
+        (hs, 0.5 * (us1 + us2), 0.)
+    } else if xi < us2 {
+        (hs, 0.5 * (us1 + us2), 0.)
     } else if xi < lambda2m {
-        (hs, us2, vr) 
+        (hs, us2, vr)
     } else if xi < lambda2p {
         let u2 = (ur - 2. * sqrt(g * hr) + 2. * xi) / 3.;
         ((u2 - xi) * (u2 - xi) / g, u2, vr)
@@ -229,8 +225,6 @@ pub fn riem_sw(wl: [f64; 3], wr: [f64; 3], xi: f64, prm: &ShallowWater)  -> [f64
     };
     [h, h * u, h * v]
 }
-
-
 
 /// Riemann solver functions for the two-fluid isothermal Euler equations.
 // Riemann solver
@@ -548,12 +542,11 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     //     gaml, gamr, pinfl, pinfr
     // );
 
-
     // -p0 is the minimum pressure
     let p0 = f64::min(pinfl, pinfr);
 
-    let mut pn = -p0+ 1e-12;
-    let _dvv = xhia(pinfr,fr+1.,1./rr,pr,pn)+xhia(pinfl,fl+1.,1./rl,pl,pn);
+    let mut pn = -p0 + 1e-12;
+    let _dvv = xhia(pinfr, fr + 1., 1. / rr, pr, pn) + xhia(pinfl, fl + 1., 1. / rl, pl, pn);
     // println!("delta_v max = {}",dvv/2.);
     // println!("crit_l = {} p0={}",xhia(pinfl,fl+1.,1./rl,pl,pn),p0);
     // println!("crit_r = {} p0={}",xhia(pinfr,fr+1.,1./rr,pr,pn),p0);
@@ -561,7 +554,8 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     // critère d'apparition du vide
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
-    let crit = (ul-ur-xhia(pinfr,fr+1.,1./rr,pr,pn))-(xhia(pinfl,fl+1.,1./rl,pl,pn));
+    let crit =
+        (ul - ur - xhia(pinfr, fr + 1., 1. / rr, pr, pn)) - (xhia(pinfl, fl + 1., 1. / rl, pl, pn));
     //println!("crit={}", crit);
     // let crit = 1.;
 
@@ -572,7 +566,6 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     if crit < 1e-6 {
         err = 0.;
     }
-
 
     let eps = 1e-12;
     let mut iter = 0;
@@ -587,21 +580,21 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
         //     "rl={} rr={} ul={} ur={} pl={} pr={} pn={}",
         //     rl, rr, ul, ur, pl, pr, pn
         // );
-        ff -=  xhia(pinfl, gaml, 1. / rl, pl, pn);
-        df -=  dxhia(pinfl, gaml, 1. / rl, pl, pn);
+        ff -= xhia(pinfl, gaml, 1. / rl, pl, pn);
+        df -= dxhia(pinfl, gaml, 1. / rl, pl, pn);
         //println!("ff1={} df={}", ff, df);
 
         // terme de droite (voir Rouy)
 
-        ff -=  xhia(pinfr, gamr, 1. / rr, pr, pn);
-        df -=  dxhia(pinfr, gamr, 1. / rr, pr, pn);
+        ff -= xhia(pinfr, gamr, 1. / rr, pr, pn);
+        df -= dxhia(pinfr, gamr, 1. / rr, pr, pn);
         //println!("ff2={} df={}", ff, df);
 
         let dp = ff / df;
         //println!("pn={} dp={} err={}", pn, dp, err);
 
         pn -= dp;
-        err = dp.abs();//pl.max(pr);
+        err = dp.abs(); //pl.max(pr);
     }
     let pm = pn;
     let r2 = 1. / ha(pinfr, gamr, 1. / rr, pr, pn);
@@ -621,10 +614,12 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
 
     let mut vit = [0.; 5];
     // vitesses caractéristiques
-    if pm <= pl {  // 1-détente
+    if pm <= pl {
+        // 1-détente
         vit[0] = ul - 1. / dpsia(pinfl, gaml, 1. / rl, pl, pl) / rl;
         vit[1] = um1 - 1. / dpsia(pinfl, gaml, 1. / rl, pl, pm) / r1;
-    } else {  // choc
+    } else {
+        // choc
         vit[0] =
             ul - f64::sqrt(((gaml + 1.) * (pm + pinfl) + (gaml - 1.) * (pl + pinfl)) * 0.5 / rl);
         vit[1] = vit[0];
@@ -707,17 +702,21 @@ pub fn riem_euler(wl: [f64; 5], wr: [f64; 5], xi: f64, prm: &Euler) -> [f64; 5] 
     prim2bal_euler(y, prm)
 }
 
-
 /// Riemann solver for the two-fluid Euler equations
 /// Lagrangian case
-pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f64; 5],(f64,f64)) {
+pub fn lagflux_euler(
+    wl: [f64; 5],
+    wr: [f64; 5],
+    vn: [f64; 2],
+    prm: &Euler,
+) -> ([f64; 5], (f64, f64)) {
     let yl = bal2prim_euler(wl, prm);
     let [rl, ul, vl, pl, phil] = yl;
     let yr = bal2prim_euler(wr, prm);
     let [rr, ur, vr, pr, phir] = yr;
 
     // check that the normal is unitary
-    assert!((vn[0]*vn[0]+vn[1]*vn[1] - 1.).abs() < 1e-12);
+    assert!((vn[0] * vn[0] + vn[1] * vn[1] - 1.).abs() < 1e-12);
 
     let ul = ul * vn[0] + vl * vn[1];
     let ur = ur * vn[0] + vr * vn[1];
@@ -737,12 +736,11 @@ pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f
     //     gaml, gamr, pinfl, pinfr
     // );
 
-
     // -p0 is the minimum pressure
     let p0 = f64::min(pinfl, pinfr);
 
-    let mut pn = -p0+ 1e-12;
-    let _dvv = xhia(pinfr,fr+1.,1./rr,pr,pn)+xhia(pinfl,fl+1.,1./rl,pl,pn);
+    let mut pn = -p0 + 1e-12;
+    let _dvv = xhia(pinfr, fr + 1., 1. / rr, pr, pn) + xhia(pinfl, fl + 1., 1. / rl, pl, pn);
     // println!("delta_v max = {}",dvv/2.);
     // println!("crit_l = {} p0={}",xhia(pinfl,fl+1.,1./rl,pl,pn),p0);
     // println!("crit_r = {} p0={}",xhia(pinfr,fr+1.,1./rr,pr,pn),p0);
@@ -750,7 +748,8 @@ pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f
     // critère d'apparition du vide
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0+eps)-xhia(pinfl,fl+1.,1./rl,pl,-p0+eps);
     //let crit = ul-ur-xhia(pinfr,fr+1.,1./rr,pr,-p0)-xhia(pinfl,fl+1.,1./rl,pl,-p0);
-    let crit = (ul-ur-xhia(pinfr,fr+1.,1./rr,pr,pn))-(xhia(pinfl,fl+1.,1./rl,pl,pn));
+    let crit =
+        (ul - ur - xhia(pinfr, fr + 1., 1. / rr, pr, pn)) - (xhia(pinfl, fl + 1., 1. / rl, pl, pn));
     //println!("crit={}", crit);
     // let crit = 1.;
 
@@ -761,7 +760,6 @@ pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f
     if crit < 1e-6 {
         err = 0.;
     }
-
 
     let eps = 1e-12;
     let mut iter = 0;
@@ -776,21 +774,21 @@ pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f
         //     "rl={} rr={} ul={} ur={} pl={} pr={} pn={}",
         //     rl, rr, ul, ur, pl, pr, pn
         // );
-        ff -=  xhia(pinfl, gaml, 1. / rl, pl, pn);
-        df -=  dxhia(pinfl, gaml, 1. / rl, pl, pn);
+        ff -= xhia(pinfl, gaml, 1. / rl, pl, pn);
+        df -= dxhia(pinfl, gaml, 1. / rl, pl, pn);
         //println!("ff1={} df={}", ff, df);
 
         // terme de droite (voir Rouy)
 
-        ff -=  xhia(pinfr, gamr, 1. / rr, pr, pn);
-        df -=  dxhia(pinfr, gamr, 1. / rr, pr, pn);
+        ff -= xhia(pinfr, gamr, 1. / rr, pr, pn);
+        df -= dxhia(pinfr, gamr, 1. / rr, pr, pn);
         //println!("ff2={} df={}", ff, df);
 
         let dp = ff / df;
         //println!("pn={} dp={} err={}", pn, dp, err);
 
         pn -= dp;
-        err = dp.abs();//pl.max(pr);
+        err = dp.abs(); //pl.max(pr);
     }
     // let pm = pn;
     // let r2 = 1. / ha(pinfr, gamr, 1. / rr, pr, pn);
@@ -807,9 +805,129 @@ pub fn lagflux_euler(wl: [f64; 5], wr: [f64; 5], vn: [f64;2],prm: &Euler) -> ([f
     } else {
         0.5 * (um1 + um2)
     };
-    ([0.,pn* vn[0],pn*vn[1],pn* um,0.],(um,pn))
+    ([0., pn * vn[0], pn * vn[1], pn * um, 0.], (um, pn))
 }
 
+/// Riemann solver for the two-fluid Euler equations
+/// Lagrangian case
+pub fn aleflux_euler(
+    wl: [f64; 5],
+    wr: [f64; 5],
+    vn: [f64; 2],
+    prm: &Euler,
+) -> ([f64; 5], (f64, f64)) {
+
+    let yl = bal2prim_euler(wl, prm);
+    let [rl, ul, vl, pl, phil] = yl;
+    let yr = bal2prim_euler(wr, prm);
+    let [rr, ur, vr, pr, phir] = yr;
+
+    // check that the normal is unitary
+    assert!((vn[0] * vn[0] + vn[1] * vn[1] - 1.).abs() < 1e-12);
+
+    let ul = ul * vn[0] + vl * vn[1];
+    let ur = ur * vn[0] + vr * vn[1];
+
+    // println!("yl = {:?}", yl);
+    // println!("yr = {:?}", yr);
+
+    let gaml = phil * prm.gamma1 + (1. - phil) * prm.gamma2;
+    let gamr = phir * prm.gamma1 + (1. - phir) * prm.gamma2;
+    let pinfl = phil * prm.pinf1 + (1. - phil) * prm.pinf2;
+    let pinfr = phir * prm.pinf1 + (1. - phir) * prm.pinf2;
+    let fl = gaml - 1.;
+    let fr = gamr - 1.;
+
+    // println!(
+    //     "gaml={} gamr={} pinfl={} pinfr={}",
+    //     gaml, gamr, pinfl, pinfr
+    // );
+
+    let el = (wl[3] - (wl[1].powi(2) / wl[0] + wl[2].powi(2) / wl[0]) / 2.0) / wl[0];
+    let er = (wr[3] - (wr[1].powi(2) / wr[0] + wr[2].powi(2) / wr[0]) / 2.0) / wr[0];
+    //let cl = sound_speed(rl, el, phil);
+    let cl = (gaml*(pl+pinfl)/rl).sqrt();
+    let cr = (gamr*(pr+pinfr)/rr).sqrt();
+
+
+    let alphal = (gaml + 1.0) / 2.0;
+    let alphar = (gamr + 1.0) / 2.0;
+    let alpha = alphal.max(alphar);
+
+    let (mut ar, mut al);
+    if pr > pl {
+        let mut a = (pr - pl) / (rr * cr) + ul - ur;
+        a = a.max(0.0);
+        al = rl * (cl + alpha * a);
+
+        a = (pl - pr) / al + ul - ur;
+        a = a.max(0.0);
+        ar = rr * (cr + alpha * a);
+    } else {
+        let mut a = (pl - pr) / (rl * cl) + ul - ur;
+        a = a.max(0.0);
+        ar = rr * (cr + alpha * a);
+
+        a = (pr - pl) / ar + ul - ur;
+        a = a.max(0.0);
+        al = rl * (cl + alpha * a);
+    }
+
+    let ustar = (al * ul + ar * ur + pl - pr) / (al + ar);
+    let pstar = (ar * pl + al * pr - al * ar * (ur - ul)) / (al + ar);
+    let r1 = 1.0 / (1.0 / rl + (ar * (ur - ul) + pl - pr) / (al * (al + ar)));
+    let r2 = 1.0 / (1.0 / rr + (al * (ur - ul) + pr - pl) / (ar * (al + ar)));
+    let e1 = el - pl.powi(2) / (2.0 * al.powi(2)) + pstar.powi(2) / (2.0 * al.powi(2));
+    let e2 = er - pr.powi(2) / (2.0 * ar.powi(2)) + pstar.powi(2) / (2.0 * ar.powi(2));
+
+    let mut flux = [0.0; 5];
+    if (phil - 0.5) * (phir - 0.5) > 0.0 {
+        let sigma1 = ul - al / rl;
+        let sigma2 = ustar;
+        let sigma3 = ur + ar / rr;
+
+        if sigma1 > 0.0 {
+            flux[0] = rl * ul;
+            flux[1] = rl * ul * ul + pl;
+            flux[2] = rl * ul * vl;
+            flux[3] = (wl[3] + pl) * ul;
+            flux[4] = rl * ul * phil;
+        } else if sigma2 > 0.0 {
+            flux[0] = r1 * ustar;
+            flux[1] = r1 * ustar * ustar + pstar;
+            flux[2] = r1 * ustar * vl;
+            flux[3] =
+                (r1 * e1 + r1 * (ustar.powi(2) + vl.powi(2)) / 2.0 + pstar)
+                    * ustar;
+            flux[4] = r1 * ustar * phil;
+        } else if sigma3 > 0.0 {
+            flux[0] = r2 * ustar;
+            flux[1] = r2 * ustar * ustar + pstar;
+            flux[2] = r2 * ustar * vr;
+            flux[3] =
+                (r2 * e2 + r2 * (ustar.powi(2) + vr.powi(2)) / 2.0 + pstar)
+                    * ustar;
+            flux[4] = r2 * ustar * phir;
+        } else {
+            flux[0] = rr * ur;
+            flux[1] = rr * ur * ur + pr;
+            flux[2] = rr * ur * vr;
+            flux[3] = (wr[3] + pr) * ur;
+            flux[4] = rr * ur * phir;
+        }
+
+        let um = 0.0;
+        (flux, (um, pstar))
+    } else {
+        let um = ustar;
+        flux[0] = 0.0;
+        flux[1] = pstar;
+        flux[2] = 0.0;
+        flux[3] = um * pstar;
+        flux[4] = 0.0;
+        (flux, (ustar, pstar))
+    }
+}
 
 #[cfg(test)]
 // test that bal2prim_isot and prim2bal_isot are consistent
@@ -878,14 +996,37 @@ fn test_lagflux_euler() {
     let u = y[1];
     let v = y[2];
     let p = y[3];
-    let vn = [1./(2f64).sqrt(), 1./(2f64).sqrt()];
-    let (flux,(un2,p2)) = lagflux_euler(w, w, vn, &prm);
+    let vn = [1. / (2f64).sqrt(), 1. / (2f64).sqrt()];
+    let (flux, (un2, p2)) = lagflux_euler(w, w, vn, &prm);
     println!("flux={:?}", flux);
-    let flux2 = [0., p*vn[0], p*vn[1], p*(u*vn[0]+v*vn[1]), 0.];
+    let flux2 = [0., p * vn[0], p * vn[1], p * (u * vn[0] + v * vn[1]), 0.];
     for iv in 0..5 {
         assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
     }
-    assert!((un2 - u*vn[0] - v*vn[1]).abs() < 1e-12);
+    assert!((un2 - u * vn[0] - v * vn[1]).abs() < 1e-12);
     assert!((p2 - p).abs() < 1e-12);
+}
 
+#[test]
+fn test_aleflux_euler() {
+    let gamma1 = 1.4;
+    let pinf1 = 0.;
+    let gamma2 = 1.4;
+    let pinf2 = 0.;
+    let prm = Euler::new(gamma1, gamma2, pinf1, pinf2);
+    let w = [1., 1., 0., 3., 1.];
+    let y = bal2prim_euler(w, &prm);
+    let u = y[1];
+    let v = y[2];
+    let p = y[3];
+    let vn = [1. / (2f64).sqrt(), 1. / (2f64).sqrt()];
+    let (flux, (un2, p2)) = aleflux_euler(w, w, vn, &prm);
+    println!("flux={:?}", flux);
+    println!("un2={}, p2={}", un2, p2);
+    // let flux2 = [0., p, 0., p * u, 0.];
+    // for iv in 0..5 {
+    //     assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
+    // // }
+    // assert!((un2 - u).abs() < 1e-12);
+     assert!((p2 - p).abs() < 1e-12);
 }
