@@ -807,7 +807,6 @@ pub fn lagflux_euler(
     };
     ([0., pn * vn[0], pn * vn[1], pn * um, 0.], (um, pn))
 }
-
 /// Riemann solver for the two-fluid Euler equations
 /// Lagrangian case
 pub fn aleflux_euler(
@@ -825,8 +824,11 @@ pub fn aleflux_euler(
     // check that the normal is unitary
     assert!((vn[0] * vn[0] + vn[1] * vn[1] - 1.).abs() < 1e-12);
 
-    let ul = ul * vn[0] + vl * vn[1];
-    let ur = ur * vn[0] + vr * vn[1];
+    let unl = ul * vn[0] + vl * vn[1];
+    let unr = ur * vn[0] + vr * vn[1];
+
+    let utl = -ul * vn[1] + vl * vn[0];
+    let utr = -ur * vn[1] + vr * vn[0];
 
     // println!("yl = {:?}", yl);
     // println!("yr = {:?}", yr);
@@ -880,6 +882,12 @@ pub fn aleflux_euler(
     let e1 = el - pl.powi(2) / (2.0 * al.powi(2)) + pstar.powi(2) / (2.0 * al.powi(2));
     let e2 = er - pr.powi(2) / (2.0 * ar.powi(2)) + pstar.powi(2) / (2.0 * ar.powi(2));
 
+    let u1 = vn[0] * ustar - vn[1] * utl;
+    let v1 = vn[1] * ustar + vn[0] * utl;
+
+    let u2 = vn[0] * ustar - vn[1] * utr;
+    let v2 = vn[1] * ustar + vn[0] * utr;
+
     let mut flux = [0.0; 5];
     if (phil - 0.5) * (phir - 0.5) > 0.0 {
         let sigma1 = ul - al / rl;
@@ -887,33 +895,33 @@ pub fn aleflux_euler(
         let sigma3 = ur + ar / rr;
 
         if sigma1 > 0.0 {
-            flux[0] = rl * ul;
-            flux[1] = rl * ul * ul + pl;
-            flux[2] = rl * ul * vl;
-            flux[3] = (wl[3] + pl) * ul;
-            flux[4] = rl * ul * phil;
+            flux[0] = rl * unl;
+            flux[1] = rl * ul * unl + pl * vn[0];
+            flux[2] = rl * vl * unl + pl * vn[1];
+            flux[3] = (wl[3] + pl) * unl;
+            flux[4] = rl * unl * phil;
         } else if sigma2 > 0.0 {
             flux[0] = r1 * ustar;
-            flux[1] = r1 * ustar * ustar + pstar;
-            flux[2] = r1 * ustar * vl;
+            flux[1] = r1 * u1 * ustar + pstar * vn[0];
+            flux[2] = r1 * v1 * ustar + pstar * vn[1];
             flux[3] =
-                (r1 * e1 + r1 * (ustar.powi(2) + vl.powi(2)) / 2.0 + pstar)
+                (r1 * e1 + r1 * (u1.powi(2) + v1.powi(2)) / 2.0 + pstar)
                     * ustar;
             flux[4] = r1 * ustar * phil;
         } else if sigma3 > 0.0 {
             flux[0] = r2 * ustar;
-            flux[1] = r2 * ustar * ustar + pstar;
-            flux[2] = r2 * ustar * vr;
+            flux[1] = r2 * u2 * ustar + pstar * vn[0];
+            flux[2] = r2 * v2 * ustar + pstar * vn[1];
             flux[3] =
-                (r2 * e2 + r2 * (ustar.powi(2) + vr.powi(2)) / 2.0 + pstar)
+                (r2 * e2 + r2 * (u2.powi(2) + v2.powi(2)) / 2.0 + pstar)
                     * ustar;
             flux[4] = r2 * ustar * phir;
         } else {
-            flux[0] = rr * ur;
-            flux[1] = rr * ur * ur + pr;
-            flux[2] = rr * ur * vr;
-            flux[3] = (wr[3] + pr) * ur;
-            flux[4] = rr * ur * phir;
+            flux[0] = rr * unr;
+            flux[1] = rr * ur * unr + pr * vn[0];
+            flux[2] = rr * vr * unr + pr * vn[1];
+            flux[3] = (wr[3] + pr) * unr;
+            flux[4] = rr * unr * phir;
         }
 
         let um = 0.0;
@@ -928,6 +936,7 @@ pub fn aleflux_euler(
         (flux, (ustar, pstar))
     }
 }
+
 
 #[cfg(test)]
 // test that bal2prim_isot and prim2bal_isot are consistent
