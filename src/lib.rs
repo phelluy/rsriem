@@ -815,7 +815,6 @@ pub fn aleflux_euler(
     vn: [f64; 2],
     prm: &Euler,
 ) -> ([f64; 5], (f64, f64)) {
-
     let yl = bal2prim_euler(wl, prm);
     let [rl, ul, vl, pl, phil] = yl;
     let yr = bal2prim_euler(wr, prm);
@@ -848,37 +847,36 @@ pub fn aleflux_euler(
     let el = (wl[3] - (wl[1].powi(2) / wl[0] + wl[2].powi(2) / wl[0]) / 2.0) / wl[0];
     let er = (wr[3] - (wr[1].powi(2) / wr[0] + wr[2].powi(2) / wr[0]) / 2.0) / wr[0];
     //let cl = sound_speed(rl, el, phil);
-    let cl = (gaml*(pl+pinfl)/rl).sqrt();
-    let cr = (gamr*(pr+pinfr)/rr).sqrt();
-
+    let cl = (gaml * (pl + pinfl) / rl).sqrt();
+    let cr = (gamr * (pr + pinfr) / rr).sqrt();
 
     let alphal = (gaml + 1.0) / 2.0;
     let alphar = (gamr + 1.0) / 2.0;
     let alpha = alphal.max(alphar);
 
-    let (mut ar, mut al);
+    let (ar, al);
     if pr > pl {
-        let mut a = (pr - pl) / (rr * cr) + ul - ur;
+        let mut a = (pr - pl) / (rr * cr) + unl - unr;
         a = a.max(0.0);
         al = rl * (cl + alpha * a);
 
-        a = (pl - pr) / al + ul - ur;
+        a = (pl - pr) / al + unl - unr;
         a = a.max(0.0);
         ar = rr * (cr + alpha * a);
     } else {
-        let mut a = (pl - pr) / (rl * cl) + ul - ur;
+        let mut a = (pl - pr) / (rl * cl) + unl - unr;
         a = a.max(0.0);
         ar = rr * (cr + alpha * a);
 
-        a = (pr - pl) / ar + ul - ur;
+        a = (pr - pl) / ar + unl - unr;
         a = a.max(0.0);
         al = rl * (cl + alpha * a);
     }
 
-    let ustar = (al * ul + ar * ur + pl - pr) / (al + ar);
-    let pstar = (ar * pl + al * pr - al * ar * (ur - ul)) / (al + ar);
-    let r1 = 1.0 / (1.0 / rl + (ar * (ur - ul) + pl - pr) / (al * (al + ar)));
-    let r2 = 1.0 / (1.0 / rr + (al * (ur - ul) + pr - pl) / (ar * (al + ar)));
+    let ustar = (al * unl + ar * unr + pl - pr) / (al + ar);
+    let pstar = (ar * pl + al * pr - al * ar * (unr - unl)) / (al + ar);
+    let r1 = 1.0 / (1.0 / rl + (ar * (unr - unl) + pl - pr) / (al * (al + ar)));
+    let r2 = 1.0 / (1.0 / rr + (al * (unr - unl) + pr - pl) / (ar * (al + ar)));
     let e1 = el - pl.powi(2) / (2.0 * al.powi(2)) + pstar.powi(2) / (2.0 * al.powi(2));
     let e2 = er - pr.powi(2) / (2.0 * ar.powi(2)) + pstar.powi(2) / (2.0 * ar.powi(2));
 
@@ -887,12 +885,14 @@ pub fn aleflux_euler(
 
     let u2 = vn[0] * ustar - vn[1] * utr;
     let v2 = vn[1] * ustar + vn[0] * utr;
+    println!("in u1={} v1={} u2={} v2={}", u1, v1, u2, v2);
+    println!("in r1={} r2={} e1={} e2={}", r1, r2, e1, e2);
 
     let mut flux = [0.0; 5];
     if (phil - 0.5) * (phir - 0.5) > 0.0 {
-        let sigma1 = ul - al / rl;
+        let sigma1 = unl - al / rl;
         let sigma2 = ustar;
-        let sigma3 = ur + ar / rr;
+        let sigma3 = unr + ar / rr;
 
         if sigma1 > 0.0 {
             flux[0] = rl * unl;
@@ -904,17 +904,13 @@ pub fn aleflux_euler(
             flux[0] = r1 * ustar;
             flux[1] = r1 * u1 * ustar + pstar * vn[0];
             flux[2] = r1 * v1 * ustar + pstar * vn[1];
-            flux[3] =
-                (r1 * e1 + r1 * (u1.powi(2) + v1.powi(2)) / 2.0 + pstar)
-                    * ustar;
+            flux[3] = (r1 * e1 + r1 * (u1.powi(2) + v1.powi(2)) / 2.0 + pstar) * ustar;
             flux[4] = r1 * ustar * phil;
         } else if sigma3 > 0.0 {
             flux[0] = r2 * ustar;
             flux[1] = r2 * u2 * ustar + pstar * vn[0];
             flux[2] = r2 * v2 * ustar + pstar * vn[1];
-            flux[3] =
-                (r2 * e2 + r2 * (u2.powi(2) + v2.powi(2)) / 2.0 + pstar)
-                    * ustar;
+            flux[3] = (r2 * e2 + r2 * (u2.powi(2) + v2.powi(2)) / 2.0 + pstar) * ustar;
             flux[4] = r2 * ustar * phir;
         } else {
             flux[0] = rr * unr;
@@ -929,14 +925,13 @@ pub fn aleflux_euler(
     } else {
         let um = ustar;
         flux[0] = 0.0;
-        flux[1] = pstar;
-        flux[2] = 0.0;
+        flux[1] = pstar * vn[0];
+        flux[2] = pstar * vn[1];
         flux[3] = um * pstar;
         flux[4] = 0.0;
         (flux, (ustar, pstar))
     }
 }
-
 
 #[cfg(test)]
 // test that bal2prim_isot and prim2bal_isot are consistent
@@ -994,13 +989,35 @@ fn test_prim2bal_euler() {
 }
 
 #[test]
-fn test_lagflux_euler() {
+fn test_lagflux_euler1() {
     let gamma1 = 1.4;
     let pinf1 = 0.;
     let gamma2 = 1.4;
     let pinf2 = 0.;
     let prm = Euler::new(gamma1, gamma2, pinf1, pinf2);
     let w = [1., 1., 0., 3., 1.];
+    let y = bal2prim_euler(w, &prm);
+    let u = y[1];
+    let v = y[2];
+    let p = y[3];
+    let vn = [1. / (2f64).sqrt(), 1. / (2f64).sqrt()];
+    let (flux, (un2, p2)) = lagflux_euler(w, w, vn, &prm);
+    println!("flux={:?}", flux);
+    let flux2 = [0., p * vn[0], p * vn[1], p * (u * vn[0] + v * vn[1]), 0.];
+    for iv in 0..5 {
+        assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
+    }
+    assert!((un2 - u * vn[0] - v * vn[1]).abs() < 1e-12);
+    assert!((p2 - p).abs() < 1e-12);
+}
+#[test]
+fn test_lagflux_euler2() {
+    let gamma1 = 1.4;
+    let pinf1 = 0.;
+    let gamma2 = 1.4;
+    let pinf2 = 0.;
+    let prm = Euler::new(gamma1, gamma2, pinf1, pinf2);
+    let w = [1., 1., -1., 3., 1.];
     let y = bal2prim_euler(w, &prm);
     let u = y[1];
     let v = y[2];
@@ -1023,19 +1040,26 @@ fn test_aleflux_euler() {
     let gamma2 = 1.4;
     let pinf2 = 0.;
     let prm = Euler::new(gamma1, gamma2, pinf1, pinf2);
-    let w = [1., 1., 0., 3., 1.];
+    let w = [1., 1., 1., 3., 1.];
     let y = bal2prim_euler(w, &prm);
+    let r = y[0];
     let u = y[1];
     let v = y[2];
     let p = y[3];
+    let phi = y[4];
+    println!("r={}, u={}, v={}, p={}, phi={}", r, u, v, p, phi);
     let vn = [1. / (2f64).sqrt(), 1. / (2f64).sqrt()];
-    let (flux, (un2, p2)) = aleflux_euler(w, w, vn, &prm);
+    //let vn = [1., 0.];
+    let (flux, (un3, p2)) = aleflux_euler(w, w, vn, &prm);
     println!("flux={:?}", flux);
+    let un2 = u * vn[0] + v * vn[1];
     println!("un2={}, p2={}", un2, p2);
-    // let flux2 = [0., p, 0., p * u, 0.];
-    // for iv in 0..5 {
-    //     assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
-    // // }
-    // assert!((un2 - u).abs() < 1e-12);
-     assert!((p2 - p).abs() < 1e-12);
+    let flux2 = [r*un2,r*u*un2+p*vn[0],r*v*un2+p*vn[1],(w[3]+p)*un2,r*phi*un2];
+    println!("flux2={:?}", flux2);
+    for iv in 0..5 {
+        assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
+    }
+    println!("un2={}, un3={}", un2, un3);
+    //assert!((un2 - 0.).abs() < 1e-12);
+    assert!((p2 - p).abs() < 1e-12);
 }
