@@ -885,8 +885,8 @@ pub fn aleflux_euler(
 
     let u2 = vn[0] * ustar - vn[1] * utr;
     let v2 = vn[1] * ustar + vn[0] * utr;
-    println!("in u1={} v1={} u2={} v2={}", u1, v1, u2, v2);
-    println!("in r1={} r2={} e1={} e2={}", r1, r2, e1, e2);
+    // println!("in u1={} v1={} u2={} v2={}", u1, v1, u2, v2);
+    // println!("in r1={} r2={} e1={} e2={}", r1, r2, e1, e2);
 
     let mut flux = [0.0; 5];
     if (phil - 0.5) * (phir - 0.5) > 0.0 {
