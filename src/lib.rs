@@ -112,6 +112,52 @@ pub fn bal2prim_sw(w: [f64; 3], _prm: &ShallowWater) -> [f64; 3] {
     let v = hv / h;
     [h, u, v]
 }
+/// Physical parameters for the Burgers equation.
+#[allow(dead_code)]
+pub struct Burgers {}
+
+impl Burgers {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+pub fn prim2bal_burg(y: [f64; 1], _prm: &Burgers) -> [f64; 1] {
+    let u = y[0];
+    [u]
+}
+
+pub fn bal2prim_burg(w: [f64; 1], _prm: &Burgers) -> [f64; 1] {
+    let u = w[0];
+    [u]
+}
+
+/// Burgers equation
+// riemann solver burgers
+pub fn riem_burg(wl: [f64; 1], wr: [f64; 1], xi: f64, _prm: &Burgers) -> [f64; 1] {
+    let ul = wl[0];
+    let ur = wr[0];
+
+    let us = if ul > ur {
+        // shock
+        let s = 0.5 * (ul + ur);
+        if xi < s {
+            ul
+        } else {
+            ur
+        }
+    } else {
+        // rarefaction
+        if xi < ul {
+            ul
+        } else if xi > ur {
+            ur
+        } else {
+            xi
+        }
+    };
+    [us]
+}
 
 /// St Venant equations
 
@@ -1054,7 +1100,13 @@ fn test1_aleflux_euler() {
     println!("flux={:?}", flux);
     let un2 = u * vn[0] + v * vn[1];
     println!("un2={}, p2={}", un2, p2);
-    let flux2 = [r*un2,r*u*un2+p*vn[0],r*v*un2+p*vn[1],(w[3]+p)*un2,r*phi*un2];
+    let flux2 = [
+        r * un2,
+        r * u * un2 + p * vn[0],
+        r * v * un2 + p * vn[1],
+        (w[3] + p) * un2,
+        r * phi * un2,
+    ];
     println!("flux2={:?}", flux2);
     for iv in 0..5 {
         assert!((flux[iv] - flux2[iv]).abs() < 1e-12);
